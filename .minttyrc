@@ -1,0 +1,11 @@
+ThemeFile=flat-ui
+FontHeight=12
+Columns=128
+Rows=40
+ScrollbackLines=10000
+BackgroundColour=0,4,2
+ForegroundColour=229,229,229
+CursorColour=255,255,255
+FontWeight=400
+FontIsBold=no
+BoldAsColour=yes

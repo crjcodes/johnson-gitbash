@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+#
+# Based on https://www.compoundtheory.com/provision-your-local-machines/
+#
+# .........?
+#set -x verbose #echo on
+
+workspace="/f/dev/work"
+subwork="$1"
+ansible="$workspace/ansible"
+ansible_git="https://github.com/ansible/ansible.git"
+dot_files="$workspace/vmifiles/$subwork"
+ERR=0
+
+devstart()
+{
+  echo "====================================="
+  echo "=  RoR Development in a VM: STARTUP"
+  echo "====================================="
+  echo "= Worskpace: [$workspace]"
+  echo "= Machine: [$subwork]"
+  echo "= "
+  
+  # only the bare necessities to get to Ansible setting everything update
+
+  echo "Getting situated."
+
+  cd $workspace
+
+  echo "Preparing for local virtual machine..."
+
+  vagrant plugin update vagrant-vbguest
+
+  if [ ! -d "$subwork" ]; then
+    mkdir $subwork
+    cd $subwork
+    # check out git files
+    
+  else
+    cd $subwork
+    #vagrant halt  
+  fi
+}
+
+devstop()
+{
+  echo "====================================="
+  echo "=  STOP"
+  echo "====================================="
+  echo "= Worskpace: $workspace"
+  echo "= Machine: $subwork"
+  echo "= "
+  
+  cd $workspace/$subwork
+  #vagrant halt
+  #copy changed dotfiles back to local repo
+  #commit local repo
+}
+
+echo ".......[$1]..........[$2]................"
+echo ""
+
+if [ -z "$1" ]; then
+  echo "ERROR: no project given."
+  exit 1
+fi
+
+if [ "$2" = "stop" ]; then
+  devstop
+elif [ -z "$2" ]; then
+  echo "starting..."
+  devstart
+fi
+
+exit 0
