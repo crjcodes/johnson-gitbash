@@ -6,10 +6,10 @@
 #set -x verbose #echo on
 
 workspace="/f/dev/work"
-project="$1"
+machine="$1"
 ansible="$workspace/ansible"
 ansible_git="https://github.com/ansible/ansible.git"
-dot_files="$workspace/vmifiles/$project"
+dot_files="$workspace/vmifiles/$machine"
 
 #======================================================================
 #
@@ -24,7 +24,7 @@ devstart()
   echo "=  RoR Development in a VM: STARTUP"
   echo "====================================="
   echo "= Worskpace: [$workspace]"
-  echo "= Machine: [$project]"
+  echo "= Machine: [$machine]"
   echo "= "
   
   # only the bare necessities to get to Ansible setting everything update
@@ -41,26 +41,30 @@ devstart()
 
   vagrant plugin update vagrant-vbguest
 
-  if [ ! -d "$project" ]; then
-    mkdir $project
+  if [ ! -d "$machine" ]; then
+    mkdir $machine
     # TODO:  git clone files    
   fi
 
-  cd $project
+  cd $machine
 
   # check if vagrant initialized
-  if [ ! -f "Vagrantfile" ] then
-    vagrant init
+  if [ ! -f "Vagrantfile" ]; then
+    vagrant init    
+    if [ $? -ne 0]; then
+      echo "...........GODEV ERROR: vagrant init failed."  
+      exit 3
+    fi
   fi
   
-  if [ $? ne 0 ] then
-    echo "...........GODEV ERROR: vagrant init failed."  
-    exit 3
-  fi
-
   #----------------------------------------------
   #  Update the vagrant and provision files
   #  from the git repository
+  
+  cd $workspace/vmfiles
+  
+  # update git local from the repository
+  
   
   # TODO: if no git, clone;
   # TODO: otherwise, update
@@ -82,10 +86,10 @@ devstop()
   echo "=  STOP"
   echo "====================================="
   echo "= Worskpace: $workspace"
-  echo "= Machine: $project"
+  echo "= Machine: $machine"
   echo "= "
   
-  cd $workspace/$project
+  cd $workspace/$machine
   #vagrant halt
   #copy changed dotfiles back to local repo
   #commit local repo
@@ -100,21 +104,21 @@ devstop()
 #   Validate inputs
 #
 workspace="/f/dev/work"
-project="$1"
+machine="$1"
 ansible="$workspace/ansible"
 ansible_git="https://github.com/ansible/ansible.git"
-dot_files="$workspace/vmfiles/$project"
+dot_files="$workspace/vmfiles/$machine"
 
 echo "...........GODEV:  1=[$1] 2=[$2]"
 echo "...........GODEV:  workspace=$workspace"
-echo "...........GODEV:  project=$project"
+echo "...........GODEV:  machine=$machine"
 echo "...........GODEV:  ansible=$ansible"
 echo "...........GODEV:  ansible_git=$ansible_git"
 echo "...........GODEV:  dot_files=$dot_files"
 echo ""
 
 if [ -z "$1" ]; then
-  echo "...........GODEV ERROR: no project given."
+  echo "...........GODEV ERROR: no machine given."
   exit 1
 fi
 
