@@ -6,93 +6,177 @@
 #set -x verbose #echo on
 
 workspace="/f/dev/work"
-machine="$1"
+export machine="$1"
 ansible="$workspace/ansible"
 ansible_git="https://github.com/ansible/ansible.git"
 dot_files="$workspace/vmifiles/$machine"
+
+
+#======================================================================
+#
+#   devnew
+#
+#   Wipe and start, moving files as necessary
+#
+devnew()
+{
+  echo "...........GODEV:  NEW DEVELOPMENT MACHINE"
+
+ 
+  #================================================  
+  echo "...........GODEV:  cleanup existing vm"
+
+  # if virtual machine exists
+    # if virtual machine is running
+      # stop the vm
+      # check for code changes on the host from the vm
+        # check-in to github as needed
+    # vagrant remove the vm
+  # clean up directories
+
+  #================================================  
+  # start a new vm
+  
+  devstart
+}
 
 #======================================================================
 #
 #   devstart
 #
-#   Starts up the development vm, setting up vagrant with what'set
-#     necessary to provision by Ansible
+#   Starts up the development vm with fresh files (re-provisioning)
+#     setting up vagrant with what's necessary to provision by Ansible
 #
 devstart()
 {
-  echo "====================================="
-  echo "=  RoR Development in a VM: STARTUP"
-  echo "====================================="
-  echo "= Worskpace: [$workspace]"
-  echo "= Machine: [$machine]"
-  echo "= "
+  echo "...........GODEV:  Starting"
   
   # only the bare necessities to get to Ansible setting everything update
 
   #----------------------------------------------
   #  Prepare for Vagrant
-  #
-  
-  echo "Getting situated."
 
-  cd $workspace
-
-  echo "Preparing for local virtual machine..."
-
-  vagrant plugin update vagrant-vbguest
-
-  if [ ! -d "$machine" ]; then
+  if [ ! -d $workspace/$machine ]; then
+    cd $workspace
     mkdir $machine
-    # TODO:  git clone files    
   fi
 
-  cd $machine
+  cd $workspace/$machine
+  
+  echo "...........GODEV:  Preparing for local virtual machine"
 
+   
   # check if vagrant initialized
   if [ ! -f "Vagrantfile" ]; then
     vagrant init    
-    if [ $? -ne 0]; then
+    if [ $? -ne 0 ]; then
       echo "...........GODEV ERROR: vagrant init failed."  
       exit 3
     fi
   fi
+
   
   #----------------------------------------------
-  #  Update the vagrant and provision files
-  #  from the git repository
-  
-  cd $workspace/vmfiles
-  
-  # update git local from the repository
+  #  Deploy
   
   
-  # TODO: if no git, clone;
-  # TODO: otherwise, update
+  #  Pull in the vagrant and provision 
+  #    files (assuming local git repo is good)
+  #  TODO: consider pulling from github directly to
+  #    /home/vagrant
+
+  if [ ! -d "provision" ]; then
+    mkdir provision
+  fi 
   
+  if [ -d $workspace/vmfiles/$machine ]; then 
+    cp -r $workspace/vmfiles/$machine/* $workspace/$machine
+    echo "...........GODEV: copied in vagrant files from $workspace/vmfiles/$machine"    
+  else
+    echo "...........GODEV: no vagrant files found for $machine."    
+  fi     
+
+  echo "...........GODEV:  updating box"
+  vagrant box update
+
+  echo "...........GODEV:  updating vbguest"
+  vagrant plugin update vagrant-vbguest
+
   
+  # TODO:  git clone files    
+  # TODO: Pull in code repos
   
+  if [ ! -d "code" ]; then
+    mkdir code
+  fi  
+  
+  #----------------------------------------------
+  # Start Vagrant VM
+  
+  echo "...........GODEV:  Starting Vagrant VM"
+  
+  vagrant up --provision    
 }
 
 #======================================================================
 #
 #   devstop
 #
-#   Stops the development vm and cleans up, ready for host machine
-#     shutdown
+#   Stops the development vm, checks in code, and cleans up, 
+#     ready for host machine shutdown.  
 #
 devstop()
 {
-  echo "====================================="
-  echo "=  STOP"
-  echo "====================================="
-  echo "= Worskpace: $workspace"
-  echo "= Machine: $machine"
-  echo "= "
+  echo "...........GODEV:  STOP THE VM"
   
-  cd $workspace/$machine
-  #vagrant halt
-  #copy changed dotfiles back to local repo
-  #commit local repo
+  if [ -d $workspace/$machine ]; then
+    cd $workspace/$machine
+    
+    if [ -f "Vagrantfile" ]; then
+      # stops the vm from running
+      vagrant halt      
+    else
+      echo "...........GODEV: Vagrantfile not found"          
+    fi
+  else
+    echo "...........GODEV: project/machine not found"      
+  fi
+    
+  #TODO; commit vagrantfile and provisioning to repo?
+  
+  #TODO: commit code to repo
+}
+
+#======================================================================
+#
+#   close
+#
+#     wipe existing VM (keep the box)
+#
+devclose()
+{
+  echo "...........GODEV:  WIPE EXISTING VM"
+  echo ""
+  
+  devstop
+   
+  if [ -d $workspace/$machine ]; then
+    cd $workspace/$machine
+    
+    if [ -f "Vagrantfile" ]; then
+      # destroys all VM resources, but Vagrant box is still available to spin up
+      # stops the running machine and destorys resources created by the vm
+      vagrant destroy -f $machine      
+    else
+      echo "...........GODEV: Vagrantfile not found"          
+    fi
+    
+    cd $workspace
+    rm -rf $machine
+    
+  else
+    echo "...........GODEV: project/machine not found"      
+  fi
 }
 
 #======================================================================
@@ -109,6 +193,8 @@ ansible="$workspace/ansible"
 ansible_git="https://github.com/ansible/ansible.git"
 dot_files="$workspace/vmfiles/$machine"
 
+echo "====================================="
+echo "..RoR Development in a VM"
 echo "...........GODEV:  1=[$1] 2=[$2]"
 echo "...........GODEV:  workspace=$workspace"
 echo "...........GODEV:  machine=$machine"
@@ -117,6 +203,12 @@ echo "...........GODEV:  ansible_git=$ansible_git"
 echo "...........GODEV:  dot_files=$dot_files"
 echo ""
 
+if [ ! -d $workspace ]; then
+  echo "...........GODEV ERROR: no workspace."
+  exit 2
+  
+fi
+
 if [ -z "$1" ]; then
   echo "...........GODEV ERROR: no machine given."
   exit 1
@@ -124,14 +216,26 @@ fi
 
 #----------------------------------------------
 #
-#  start or stop development environment
+#   development environment
+#   
+#     new: wipe and start, moving files as necessary
+#     start: bring up VM with fresh files (re-provisioning)
+#     stop: halts the vm and adds files to the repos
+#     close: wipe existing VM (keep the box)
 #
 
-if [ "$2" = "stop" ]; then
+if [ "$2" = "new" ]; then
+  devnew
+elif [ "$2" = "start" ]; then
+  devstart  
+elif [ "$2" = "stop" ]; then
   devstop
-elif [ -z "$2" ]; then
-  echo "starting..."
-  devstart
+elif [ "$2" = "close" ]; then
+  devclose
+else
+   echo "...........GODEV ERROR: command not recognized."
 fi
+
+echo ""
 
 exit 0

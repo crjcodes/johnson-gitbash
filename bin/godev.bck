@@ -1,0 +1,133 @@
+#!/usr/bin/env bash
+#
+# Based on https://www.compoundtheory.com/provision-your-local-machines/
+#
+# .........?
+#set -x verbose #echo on
+
+workspace="/f/dev/work"
+project="$1"
+ansible="$workspace/ansible"
+ansible_git="https://github.com/ansible/ansible.git"
+dot_files="$workspace/vmifiles/$project"
+
+#======================================================================
+#
+#   devstart
+#
+#   Starts up the development vm, setting up vagrant with what'set
+#     necessary to provision by Ansible
+#
+devstart()
+{
+  echo "====================================="
+  echo "=  RoR Development in a VM: STARTUP"
+  echo "====================================="
+  echo "= Worskpace: [$workspace]"
+  echo "= Machine: [$project]"
+  echo "= "
+  
+  # only the bare necessities to get to Ansible setting everything update
+
+  #----------------------------------------------
+  #  Prepare for Vagrant
+  #
+  
+  echo "Getting situated."
+
+  cd $workspace
+
+  echo "Preparing for local virtual machine..."
+
+  vagrant plugin update vagrant-vbguest
+
+  if [ ! -d "$project" ]; then
+    mkdir $project
+    # TODO:  git clone files    
+  fi
+
+  cd $project
+
+  # check if vagrant initialized
+  if [ ! -f "Vagrantfile" ]; then
+    vagrant init
+  fi
+  
+  if [ $? ne 0 ]; then
+    echo "...........GODEV ERROR: vagrant init failed."  
+    exit 3
+  fi
+
+  #----------------------------------------------
+  #  Update the vagrant and provision files
+  #  from the git repository
+  
+  # TODO: if no git, clone;
+  # TODO: otherwise, update
+  
+  
+  
+}
+
+#======================================================================
+#
+#   devstop
+#
+#   Stops the development vm and cleans up, ready for host machine
+#     shutdown
+#
+devstop()
+{
+  echo "====================================="
+  echo "=  STOP"
+  echo "====================================="
+  echo "= Worskpace: $workspace"
+  echo "= Machine: $project"
+  echo "= "
+  
+  cd $workspace/$project
+  #vagrant halt
+  #copy changed dotfiles back to local repo
+  #commit local repo
+}
+
+#======================================================================
+#
+#   Shell script's main body
+#
+
+#----------------------------------------------
+#   Validate inputs
+#
+workspace="/f/dev/work"
+project="$1"
+ansible="$workspace/ansible"
+ansible_git="https://github.com/ansible/ansible.git"
+dot_files="$workspace/vmfiles/$project"
+
+echo "...........GODEV:  1=[$1] 2=[$2]"
+echo "...........GODEV:  workspace=$workspace"
+echo "...........GODEV:  project=$project"
+echo "...........GODEV:  ansible=$ansible"
+echo "...........GODEV:  ansible_git=$ansible_git"
+echo "...........GODEV:  dot_files=$dot_files"
+echo ""
+
+if [ -z "$1" ]; then
+  echo "...........GODEV ERROR: no project given."
+  exit 1
+fi
+
+#----------------------------------------------
+#
+#  start or stop development environment
+#
+
+if [ "$2" = "stop" ]; then
+  devstop
+elif [ -z "$2" ]; then
+  echo "starting..."
+  devstart
+fi
+
+exit 0
