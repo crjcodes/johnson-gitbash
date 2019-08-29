@@ -75,47 +75,59 @@ devstart()
     fi
   fi
 
+  devdeploy
   
-  #----------------------------------------------
-  #  Deploy
-  
-  
-  #  Pull in the vagrant and provision 
-  #    files (assuming local git repo is good)
-  #  TODO: consider pulling from github directly to
-  #    /home/vagrant
-
-  if [ ! -d "provision" ]; then
-    mkdir provision
-  fi 
-  
-  if [ -d $workspace/vmfiles/$machine ]; then 
-    cp -r $workspace/vmfiles/$machine/* $workspace/$machine
-    echo "...........GODEV: copied in vagrant files from $workspace/vmfiles/$machine"    
-  else
-    echo "...........GODEV: no vagrant files found for $machine."    
-  fi     
-
   echo "...........GODEV:  updating box"
   vagrant box update
 
   echo "...........GODEV:  updating vbguest"
   vagrant plugin update vagrant-vbguest
 
-  
-  # TODO:  git clone files    
-  # TODO: Pull in code repos
-  
+  #----------------------------------------------
+  # Start Vagrant VM
+
+  echo "...........GODEV:  Starting Vagrant VM with provision flag"
+  vagrant up --provision    
+}
+
+#======================================================================
+#
+#   devdeploy
+#
+#     Pull in the vagrant and provision 
+#       files (assuming local git repo is good)
+#     TODO: consider pulling from github directly to
+#       /home/vagrant
+#
+devdeploy()
+{
+  if [ ! -d $workspace/$machine ]; then
+    cd $workspace
+    mkdir $machine
+  fi
+  # TODO: else error
+
+  cd $workspace/$machine
+
+  if [ ! -d "provision" ]; then
+    mkdir provision
+  fi 
+
+  # copies Vagrantfile, and provisioning files
+  if [ -d $workspace/vmfiles/$machine ]; then 
+    cp -r $workspace/vmfiles/$machine/* $workspace/$machine
+    echo "...........GODEV:  Copied in vagrant files from $workspace/vmfiles/$machine"    
+  else
+    echo "...........GODEV:  No vagrant files found for $machine."    
+  fi     
+
   if [ ! -d "code" ]; then
     mkdir code
   fi  
-  
-  #----------------------------------------------
-  # Start Vagrant VM
-  
-  echo "...........GODEV:  Starting Vagrant VM"
-  
-  vagrant up --provision    
+
+  # TODO:  git clone files    
+  # TODO: Pull in code repos
+
 }
 
 #======================================================================
@@ -232,6 +244,8 @@ elif [ "$2" = "stop" ]; then
   devstop
 elif [ "$2" = "close" ]; then
   devclose
+elif [ "$2" = "deploy" ]; then
+  devdeploy
 else
    echo "...........GODEV ERROR: command not recognized."
 fi
