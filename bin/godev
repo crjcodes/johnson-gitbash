@@ -7,8 +7,6 @@
 
 workspace="/f/dev/work"
 export machine="$1"
-ansible="$workspace/ansible"
-ansible_git="https://github.com/ansible/ansible.git"
 dot_files="$workspace/vmifiles/$machine"
 
 
@@ -59,6 +57,7 @@ devstart()
   if [ ! -d $workspace/$machine ]; then
     cd $workspace
     mkdir $machine
+    cd ..
   fi
 
   cd $workspace/$machine
@@ -115,7 +114,7 @@ devdeploy()
 
   # copies Vagrantfile, and provisioning files
   if [ -d $workspace/vmfiles/$machine ]; then 
-    cp -r $workspace/vmfiles/$machine/* $workspace/$machine
+    cp -r $workspace/vmfiles/$machine/* $workspace/$machine >&0
     echo "...........GODEV:  Copied in vagrant files from $workspace/vmfiles/$machine"    
   else
     echo "...........GODEV:  No vagrant files found for $machine."    
@@ -201,8 +200,6 @@ devclose()
 #
 workspace="/f/dev/work"
 machine="$1"
-ansible="$workspace/ansible"
-ansible_git="https://github.com/ansible/ansible.git"
 dot_files="$workspace/vmfiles/$machine"
 
 echo "====================================="
@@ -210,8 +207,6 @@ echo "..RoR Development in a VM"
 echo "...........GODEV:  1=[$1] 2=[$2]"
 echo "...........GODEV:  workspace=$workspace"
 echo "...........GODEV:  machine=$machine"
-echo "...........GODEV:  ansible=$ansible"
-echo "...........GODEV:  ansible_git=$ansible_git"
 echo "...........GODEV:  dot_files=$dot_files"
 echo ""
 
