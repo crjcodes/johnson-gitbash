@@ -107,14 +107,10 @@ devdeploy()
   # TODO: else error
 
   cd $workspace/$machine
-
-  if [ ! -d "provision" ]; then
-    mkdir provision
-  fi 
-
+ 
   # copies Vagrantfile, and provisioning files
   if [ -d $workspace/vmfiles/$machine ]; then 
-    cp -r $workspace/vmfiles/$machine/* $workspace/$machine >&0
+    cp -r $workspace/vmfiles/$machine $workspace
     echo "...........GODEV:  Copied in vagrant files from $workspace/vmfiles/$machine"    
   else
     echo "...........GODEV:  No vagrant files found for $machine."    
@@ -235,6 +231,9 @@ if [ "$2" = "new" ]; then
   devnew
 elif [ "$2" = "start" ]; then
   devstart  
+elif [ "$2" = "redo" ]; then
+  devclose
+  devnew
 elif [ "$2" = "stop" ]; then
   devstop
 elif [ "$2" = "close" ]; then
