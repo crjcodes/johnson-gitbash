@@ -1,3 +1,5 @@
+
+
 export PATH=$PATH:"/C/Program Files/Notepad++"
 
 # Set the base PS1
